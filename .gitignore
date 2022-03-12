@@ -1,11 +1,22 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
 # Compiled class file
 *.class
 
 # Log file
 *.log
 
-# BlueJ files
-*.ctxt
+# IDEA files
+.idea/
+/shelf/
+/workspace.xml
+*.iws
+*.iml
+*.ipr
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
