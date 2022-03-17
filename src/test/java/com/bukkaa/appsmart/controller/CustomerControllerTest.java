@@ -12,6 +12,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -24,7 +26,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -135,7 +136,9 @@ class CustomerControllerTest {
 
     @Test
     void getAllCustomers_positive() {
-        List<Customer> expectedList = IntStream.range(0, 10)
+        int page = 0;
+        int size = 10;
+        List<Customer> expectedList = IntStream.range(0, size)
                 .mapToObj(i -> {
                     Customer customer = new Customer();
                     customer.setCreatedAt(Timestamp.from(Instant.now()));
@@ -144,12 +147,14 @@ class CustomerControllerTest {
                 })
                 .collect(Collectors.toList());
 
-        when(manager.getAllCustomers()).thenReturn(expectedList);
+        Page<Customer> expectedPage = new PageImpl<>(expectedList);
 
-        ResponseEntity<List<CustomerDto>> response = controller.getAllCustomers();
+        when(manager.getAllCustomersPageable(eq(page), eq(size))).thenReturn(expectedPage);
+
+        ResponseEntity<List<CustomerDto>> response = controller.getAllCustomersPageable(page, size);
 
         verify(mapper, times(1)).toDtos(eq(expectedList));
-        verify(manager, times(1)).getAllCustomers();
+        verify(manager, times(1)).getAllCustomersPageable(eq(page), eq(size));
         assertThat(response).isNotNull();
         assertThat(response.hasBody()).isTrue();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -172,13 +177,37 @@ class CustomerControllerTest {
     }
 
     @Test
-    void getAllCustomers_returnsNotFound_wheNoCustomers() {
-        when(manager.getAllCustomers()).thenReturn(emptyList());
+    void getAllCustomers_returnsNotFound_whenNoCustomers() {
+        int page = 0;
+        int size = 10;
+        when(manager.getAllCustomersPageable(page, size)).thenReturn(Page.empty());
 
-        ResponseEntity<List<CustomerDto>> response = controller.getAllCustomers();
+        ResponseEntity<List<CustomerDto>> response = controller.getAllCustomersPageable(page, size);
 
         verify(mapper, never()).toDtos(anyList());
-        verify(manager, times(1)).getAllCustomers();
+        verify(manager, times(1)).getAllCustomersPageable(eq(page), eq(size));
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void getAllCustomers_returnsNotFound_whenPageLargerThanTotalResults() {
+        int page = 5;
+        int size = 10;
+        List<Customer> expectedList = IntStream.range(0, 3)
+                .mapToObj(i -> {
+                    Customer customer = new Customer();
+                    customer.setCreatedAt(Timestamp.from(Instant.now()));
+                    customer.setTitle("Customer #" + i);
+                    return customer;
+                })
+                .collect(Collectors.toList());
+        when(manager.getAllCustomersPageable(page, size)).thenReturn(new PageImpl<>(expectedList));
+
+        ResponseEntity<List<CustomerDto>> response = controller.getAllCustomersPageable(page, size);
+
+        verify(mapper, never()).toDtos(anyList());
+        verify(manager, times(1)).getAllCustomersPageable(eq(page), eq(size));
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }

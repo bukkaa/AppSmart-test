@@ -7,18 +7,14 @@ import com.bukkaa.appsmart.manager.CustomerManager;
 import com.bukkaa.appsmart.manager.ProductManager;
 import com.bukkaa.appsmart.manager.impl.ProductManagerImpl;
 import com.bukkaa.appsmart.mapper.ProductMapper;
-import org.h2.tools.Server;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -113,7 +109,9 @@ class ProductJpaTest extends RepositoryBaseTest<ProductRepository, Product, UUID
 
     @Test
     void findAllCustomerProducts_negative() {
-        List<Product> result = manager.findAllCustomerProducts(UUID.randomUUID().toString());
+        int page = 0;
+        int size = 10;
+        Page<Product> result = manager.findAllCustomerProductsPageable(UUID.randomUUID().toString(), page, size);
 
         assertThat(result).isNotNull().isEmpty();
     }
@@ -130,7 +128,9 @@ class ProductJpaTest extends RepositoryBaseTest<ProductRepository, Product, UUID
 
         assertThat(customerId).isNotNull();
 
-        IntStream.range(0, 10)
+        int page = 0;
+        int size = 10;
+        IntStream.range(0, size)
                 .mapToObj(i -> {
                     Product product = new Product();
                     product.setCustomer(customer);
@@ -141,7 +141,7 @@ class ProductJpaTest extends RepositoryBaseTest<ProductRepository, Product, UUID
                 })
                 .forEach(testEntityManager::persist);
 
-        List<Product> result = manager.findAllCustomerProducts(customerId.toString());
+        Page<Product> result = manager.findAllCustomerProductsPageable(customerId.toString(), page, size);
 
         assertThat(result).isNotNull().isNotEmpty().hasSize(10);
     }

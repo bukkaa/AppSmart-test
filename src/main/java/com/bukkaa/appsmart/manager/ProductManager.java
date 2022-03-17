@@ -2,8 +2,8 @@ package com.bukkaa.appsmart.manager;
 
 import com.bukkaa.appsmart.dto.UpdateProductDto;
 import com.bukkaa.appsmart.entity.Product;
+import org.springframework.data.domain.Page;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface ProductManager {
@@ -14,7 +14,7 @@ public interface ProductManager {
 
     void deleteProduct(String productId);
 
-    List<Product> findAllCustomerProducts(String customerId);
+    Page<Product> findAllCustomerProductsPageable(String customerId, int page, int size);
 
     Product createProductForCustomer(String customerId, Product product);
 }

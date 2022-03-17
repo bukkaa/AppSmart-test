@@ -8,10 +8,10 @@ import com.bukkaa.appsmart.mapper.CustomerMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -75,14 +75,18 @@ class CustomerJpaTest extends RepositoryBaseTest<CustomerRepository, Customer, U
 
     @Test
     void getAllCustomers_negative() {
-        List<Customer> result = manager.getAllCustomers();
+        int page = 0;
+        int size = 10;
+        Page<Customer> result = manager.getAllCustomersPageable(page, size);
 
         assertThat(result).isNotNull().isEmpty();
     }
 
     @Test
     void getAllCustomers_positive() {
-        IntStream.range(0, 10)
+        int page = 0;
+        int size = 10;
+        IntStream.range(0, size)
                 .mapToObj(i -> {
                     Customer customer = new Customer();
                     customer.setCreatedAt(Timestamp.from(Instant.now()));
@@ -91,7 +95,7 @@ class CustomerJpaTest extends RepositoryBaseTest<CustomerRepository, Customer, U
                 })
                 .forEach(testEntityManager::persist);
 
-        List<Customer> result = manager.getAllCustomers();
+        Page<Customer> result = manager.getAllCustomersPageable(page, size);
 
         assertThat(result).isNotNull().isNotEmpty().hasSize(10);
     }

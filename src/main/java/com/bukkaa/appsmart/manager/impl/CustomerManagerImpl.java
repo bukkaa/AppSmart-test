@@ -7,11 +7,12 @@ import com.bukkaa.appsmart.mapper.CustomerMapper;
 import com.bukkaa.appsmart.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,8 +38,8 @@ public class CustomerManagerImpl implements CustomerManager {
     }
 
     @Override
-    public List<Customer> getAllCustomers() {
-        return (List<Customer>) repository.findAll();
+    public Page<Customer> getAllCustomersPageable(int page, int size) {
+        return repository.findAll(PageRequest.of(page, size));
     }
 
     @Override

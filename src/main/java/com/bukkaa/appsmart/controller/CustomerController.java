@@ -7,9 +7,9 @@ import com.bukkaa.appsmart.manager.CustomerManager;
 import com.bukkaa.appsmart.mapper.CustomerMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,17 +48,18 @@ public class CustomerController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CustomerDto>> getAllCustomers() {
+    public ResponseEntity<List<CustomerDto>> getAllCustomersPageable(@RequestParam int page,
+                                                                     @RequestParam int size) {
         log.info("getAllCustomers <<< ");
 
-        List<Customer> customers = manager.getAllCustomers();
-        if (CollectionUtils.isEmpty(customers)) {
+        Page<Customer> customersPage = manager.getAllCustomersPageable(page, size);
+        if (customersPage.isEmpty() || page > customersPage.getTotalPages()) {
             log.info("getAllCustomers >>> no customers found!");
             return ResponseEntity.notFound().build();
         }
 
-        log.info("getAllCustomers >>> customers = {}", customers);
-        return ResponseEntity.ok(mapper.toDtos(customers));
+        log.info("getAllCustomers >>> customers = {}", customersPage);
+        return ResponseEntity.ok(mapper.toDtos(customersPage.getContent()));
     }
 
     @PutMapping("/{customerId}")

@@ -9,11 +9,12 @@ import com.bukkaa.appsmart.mapper.ProductMapper;
 import com.bukkaa.appsmart.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -52,8 +53,8 @@ public class ProductManagerImpl implements ProductManager {
     }
 
     @Override
-    public List<Product> findAllCustomerProducts(String customerId) {
-        return repository.findAllProductsByCustomerId(UUID.fromString(customerId));
+    public Page<Product> findAllCustomerProductsPageable(String customerId, int page, int size) {
+        return repository.findAllProductsByCustomerId(UUID.fromString(customerId), PageRequest.of(page, size));
     }
 
     @Override

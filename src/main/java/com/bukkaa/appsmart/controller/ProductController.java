@@ -7,9 +7,9 @@ import com.bukkaa.appsmart.manager.ProductManager;
 import com.bukkaa.appsmart.mapper.ProductMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,17 +39,19 @@ public class ProductController {
     }
 
     @GetMapping("/customers/{customerId}/products")
-    public ResponseEntity<List<ProductDto>> findAllCustomerProducts(@PathVariable String customerId) {
+    public ResponseEntity<List<ProductDto>> findAllCustomerProducts(@PathVariable String customerId,
+                                                                    @RequestParam int page,
+                                                                    @RequestParam int size) {
         log.info("findAllCustomerProducts <<< customerId = '{}'", customerId);
 
-        List<Product> products = manager.findAllCustomerProducts(customerId);
-        if (CollectionUtils.isEmpty(products)) {
+        Page<Product> productsPage = manager.findAllCustomerProductsPageable(customerId, page, size);
+        if (productsPage.isEmpty() || page > productsPage.getTotalPages()) {
             log.info("findAllCustomerProducts >>> no products found for customer '{}'!", customerId);
             return ResponseEntity.notFound().build();
         }
 
-        log.info("findAllCustomerProducts >>> customerId = '{}', products = {}", customerId, products);
-        return ResponseEntity.ok(mapper.toDtos(products));
+        log.info("findAllCustomerProducts >>> customerId = '{}', products = {}", customerId, productsPage);
+        return ResponseEntity.ok(mapper.toDtos(productsPage.getContent()));
     }
 
 

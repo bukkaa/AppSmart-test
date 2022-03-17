@@ -12,6 +12,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -96,6 +98,8 @@ class ProductControllerTest {
 
     @Test
     void findAllCustomerProducts_positive() {
+        int page = 0;
+        int size = 10;
         Customer customer = new Customer();
         customer.setId(UUID.randomUUID());
         customer.setTitle("Big Customer");
@@ -109,12 +113,14 @@ class ProductControllerTest {
                 })
                 .collect(Collectors.toList());
 
-        when(manager.findAllCustomerProducts(customer.getId().toString())).thenReturn(expectedList);
+        PageImpl<Product> expectedPage = new PageImpl<>(expectedList);
 
-        ResponseEntity<List<ProductDto>> response = controller.findAllCustomerProducts(customer.getId().toString());
+        when(manager.findAllCustomerProductsPageable(eq(customer.getId().toString()), eq(page), eq(size))).thenReturn(expectedPage);
+
+        ResponseEntity<List<ProductDto>> response = controller.findAllCustomerProducts(customer.getId().toString(), page, size);
 
         verify(mapper, times(1)).toDtos(eq(expectedList));
-        verify(manager, times(1)).findAllCustomerProducts(eq(customer.getId().toString()));
+        verify(manager, times(1)).findAllCustomerProductsPageable(eq(customer.getId().toString()), eq(page), eq(size));
         assertThat(response).isNotNull();
         assertThat(response.hasBody()).isTrue();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -135,6 +141,43 @@ class ProductControllerTest {
             assertThat(actual.getPrice()).isEqualTo(expected.getPrice());
             assertThat(actual.getDescription()).isEqualTo(expected.getDescription());
         }
+    }
+
+    @Test
+    void findAllCustomerProducts_returnsNotFound_whenNoProducts() {
+        int page = 0;
+        int size = 10;
+
+        when(manager.findAllCustomerProductsPageable(anyString(), eq(page), eq(size))).thenReturn(Page.empty());
+
+        ResponseEntity<List<ProductDto>> response = controller.findAllCustomerProducts("ID", page, size);
+
+        verify(mapper, never()).toDtos(anyList());
+        verify(manager, times(1)).findAllCustomerProductsPageable(anyString(), eq(page), eq(size));
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void findAllCustomerProducts_returnsNotFound_whenPageLargerThanTotalResults() {
+        int page = 5;
+        int size = 10;
+        List<Product> expectedList = IntStream.range(0, 10)
+                .mapToObj(i -> {
+                    Product product = new Product();
+                    product.setCreatedAt(Timestamp.from(Instant.now()));
+                    product.setTitle("Product #" + i);
+                    return product;
+                })
+                .collect(Collectors.toList());
+        when(manager.findAllCustomerProductsPageable(anyString(), eq(page), eq(size))).thenReturn(new PageImpl<>(expectedList));
+
+        ResponseEntity<List<ProductDto>> response = controller.findAllCustomerProducts("ID", page, size);
+
+        verify(mapper, never()).toDtos(anyList());
+        verify(manager, times(1)).findAllCustomerProductsPageable(anyString(), eq(page), eq(size));
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
