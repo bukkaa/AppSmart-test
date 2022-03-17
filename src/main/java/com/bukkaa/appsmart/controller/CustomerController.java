@@ -1,6 +1,7 @@
 package com.bukkaa.appsmart.controller;
 
 import com.bukkaa.appsmart.dto.CustomerDto;
+import com.bukkaa.appsmart.dto.UpdateCustomerDto;
 import com.bukkaa.appsmart.entity.Customer;
 import com.bukkaa.appsmart.manager.CustomerManager;
 import com.bukkaa.appsmart.mapper.CustomerMapper;
@@ -52,6 +53,7 @@ public class CustomerController {
 
         List<Customer> customers = manager.getAllCustomers();
         if (CollectionUtils.isEmpty(customers)) {
+            log.info("getAllCustomers >>> no customers found!");
             return ResponseEntity.notFound().build();
         }
 
@@ -61,13 +63,13 @@ public class CustomerController {
 
     @PutMapping("/{customerId}")
     public ResponseEntity<CustomerDto> updateCustomer(@PathVariable String customerId,
-                                                      @RequestBody(required = false) CustomerDto dto) {
-        log.info("updateCustomer <<< customerId = '{}', update = {}", customerId, dto);
-        if (dto == null) {
+                                                      @RequestBody(required = false) UpdateCustomerDto updateDto) {
+        log.info("updateCustomer <<< customerId = '{}', update = {}", customerId, updateDto);
+        if (updateDto == null) {
             log.warn("updateCustomer >>> Error: no data received");
             return ResponseEntity.badRequest().build();
         }
-        Customer customer = manager.updateCustomer(customerId, mapper.toModel(dto));
+        Customer customer = manager.updateCustomer(customerId, updateDto);
 
         log.info("updateCustomer >>> updated = {}", customer);
         return ResponseEntity.ok(mapper.toDto(customer));

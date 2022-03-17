@@ -1,5 +1,6 @@
 package com.bukkaa.appsmart.manager;
 
+import com.bukkaa.appsmart.dto.UpdateCustomerDto;
 import com.bukkaa.appsmart.entity.Customer;
 
 import java.util.List;
@@ -15,5 +16,5 @@ public interface CustomerManager {
 
     void removeCustomer(String customerId);
 
-    Customer updateCustomer(String customerId, Customer customer);
+    Customer updateCustomer(String customerId, UpdateCustomerDto updateCustomerDto);
 }

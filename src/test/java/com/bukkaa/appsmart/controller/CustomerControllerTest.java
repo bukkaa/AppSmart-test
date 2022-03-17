@@ -1,6 +1,7 @@
 package com.bukkaa.appsmart.controller;
 
 import com.bukkaa.appsmart.dto.CustomerDto;
+import com.bukkaa.appsmart.dto.UpdateCustomerDto;
 import com.bukkaa.appsmart.entity.Customer;
 import com.bukkaa.appsmart.manager.CustomerManager;
 import com.bukkaa.appsmart.mapper.CustomerMapper;
@@ -17,10 +18,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -61,16 +66,18 @@ class CustomerControllerTest {
         verify(mapper, times(1)).toModel(eq(dto));
         verify(mapper, times(1)).toDto(eq(expected));
         verify(manager, times(1)).createCustomer(any(Customer.class));
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertThat(response).isNotNull();
+        assertThat(response.hasBody()).isTrue();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
         CustomerDto body = response.getBody();
-        assertNotNull(body);
-        assertEquals(expected.getId().toString(), body.getId());
-        assertEquals(expected.getTitle(), body.getTitle());
-        assertEquals(expected.getCreatedAt(), body.getCreatedAt());
-        assertEquals(expected.getModifiedAt(), body.getModifiedAt());
-        assertEquals(expected.isDeleted(), body.isDeleted());
-        assertNull(body.getProducts());
+        assertThat(body).isNotNull();
+        assertThat(body.getId()).isEqualTo(expected.getId().toString());
+        assertThat(body.getTitle()).isEqualTo(expected.getTitle());
+        assertThat(body.getCreatedAt()).isEqualTo(expected.getCreatedAt());
+        assertThat(body.getModifiedAt()).isEqualTo(expected.getModifiedAt());
+        assertThat(body.isDeleted()).isEqualTo(expected.isDeleted());
+        assertThat(body.getProducts()).isNotNull().isEmpty();
     }
 
     @Test
@@ -80,8 +87,8 @@ class CustomerControllerTest {
         verify(mapper, never()).toModel(any(CustomerDto.class));
         verify(mapper, never()).toDto(any(Customer.class));
         verify(manager, never()).createCustomer(any(Customer.class));
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -100,16 +107,18 @@ class CustomerControllerTest {
 
         verify(mapper, times(1)).toDto(eq(expected));
         verify(manager, times(1)).findCustomer(eq(customerId.toString()));
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertThat(response).isNotNull();
+        assertThat(response.hasBody()).isTrue();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
         CustomerDto body = response.getBody();
-        assertNotNull(body);
-        assertEquals(expected.getId().toString(), body.getId());
-        assertEquals(expected.getTitle(), body.getTitle());
-        assertEquals(expected.getCreatedAt(), body.getCreatedAt());
-        assertEquals(expected.getModifiedAt(), body.getModifiedAt());
-        assertEquals(expected.isDeleted(), body.isDeleted());
-        assertNull(body.getProducts());
+        assertThat(body).isNotNull();
+        assertThat(body.getId()).isEqualTo(expected.getId().toString());
+        assertThat(body.getTitle()).isEqualTo(expected.getTitle());
+        assertThat(body.getCreatedAt()).isEqualTo(expected.getCreatedAt());
+        assertThat(body.getModifiedAt()).isEqualTo(expected.getModifiedAt());
+        assertThat(body.isDeleted()).isEqualTo(expected.isDeleted());
+        assertThat(body.getProducts()).isNotNull().isEmpty();
     }
 
     @Test
@@ -120,46 +129,90 @@ class CustomerControllerTest {
 
         verify(mapper, never()).toDto(any(Customer.class));
         verify(manager, times(1)).findCustomer(anyString());
-        assertNotNull(response);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
-    void getAllCustomers() {
-        assertNotNull(new Object());
+    void getAllCustomers_positive() {
+        List<Customer> expectedList = IntStream.range(0, 10)
+                .mapToObj(i -> {
+                    Customer customer = new Customer();
+                    customer.setCreatedAt(Timestamp.from(Instant.now()));
+                    customer.setTitle("Customer #" + i);
+                    return customer;
+                })
+                .collect(Collectors.toList());
+
+        when(manager.getAllCustomers()).thenReturn(expectedList);
+
+        ResponseEntity<List<CustomerDto>> response = controller.getAllCustomers();
+
+        verify(mapper, times(1)).toDtos(eq(expectedList));
+        verify(manager, times(1)).getAllCustomers();
+        assertThat(response).isNotNull();
+        assertThat(response.hasBody()).isTrue();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        List<CustomerDto> actualList = response.getBody();
+        assertThat(actualList).isNotNull().hasSize(expectedList.size());
+
+        actualList.sort((o1, o2) -> String.CASE_INSENSITIVE_ORDER.compare(o1.getTitle(), o2.getTitle()));
+        expectedList.sort((o1, o2) -> String.CASE_INSENSITIVE_ORDER.compare(o1.getTitle(), o2.getTitle()));
+
+        for (int i = 0; i < actualList.size(); i++) {
+            CustomerDto actual = actualList.get(i);
+            Customer expected = expectedList.get(i);
+            assertThat(actual.getTitle()).isEqualTo(expected.getTitle());
+            assertThat(actual.getCreatedAt()).isEqualTo(expected.getCreatedAt());
+            assertThat(actual.getModifiedAt()).isEqualTo(expected.getModifiedAt());
+            assertThat(actual.isDeleted()).isEqualTo(expected.isDeleted());
+            assertThat(actual.getProducts()).isNotNull().isEmpty();
+        }
+    }
+
+    @Test
+    void getAllCustomers_returnsNotFound_wheNoCustomers() {
+        when(manager.getAllCustomers()).thenReturn(emptyList());
+
+        ResponseEntity<List<CustomerDto>> response = controller.getAllCustomers();
+
+        verify(mapper, never()).toDtos(anyList());
+        verify(manager, times(1)).getAllCustomers();
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     void updateCustomer() {
-        Customer expectedDto = new Customer();
+        Customer expected = new Customer();
         UUID customerId = UUID.randomUUID();
-        expectedDto.setId(customerId);
-        expectedDto.setCreatedAt(Timestamp.from(Instant.now()));
-        expectedDto.setModifiedAt(Timestamp.from(Instant.now()));
-        expectedDto.setTitle("TITLE 2");
-        expectedDto.setDeleted(false);
-        when(manager.updateCustomer(eq(customerId.toString()), any(Customer.class))).thenReturn(expectedDto);
+        expected.setId(customerId);
+        expected.setCreatedAt(Timestamp.from(Instant.now()));
+        expected.setModifiedAt(Timestamp.from(Instant.now()));
+        expected.setTitle("TITLE 2");
+        expected.setDeleted(false);
+        when(manager.updateCustomer(eq(customerId.toString()), any(UpdateCustomerDto.class))).thenReturn(expected);
 
-        CustomerDto dto = CustomerDto.builder().id(customerId.toString()).title("TITLE 2").build();
+        UpdateCustomerDto updateDto = UpdateCustomerDto.builder().title("TITLE 2").build();
 
-        ResponseEntity<CustomerDto> response = controller.updateCustomer(dto.getId(), dto);
+        ResponseEntity<CustomerDto> response = controller.updateCustomer(customerId.toString(), updateDto);
 
-        verify(mapper, times(1)).toModel(eq(dto));
-        verify(mapper, times(1)).toDto(eq(expectedDto));
-        Customer expectedModel = new Customer();
-        expectedModel.setTitle(expectedDto.getTitle());
-        verify(manager, times(1)).updateCustomer(eq(dto.getId()), eq(expectedModel));
+        verify(mapper, times(1)).toDto(eq(expected));
+        verify(manager, times(1)).updateCustomer(eq(customerId.toString()), eq(updateDto));
 
-        assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertThat(response).isNotNull();
+        assertThat(response.hasBody()).isTrue();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
         CustomerDto body = response.getBody();
-        assertNotNull(body);
-        assertEquals(expectedDto.getId().toString(), body.getId());
-        assertEquals(expectedDto.getTitle(), body.getTitle());
-        assertEquals(expectedDto.getCreatedAt(), body.getCreatedAt());
-        assertEquals(expectedDto.getModifiedAt(), body.getModifiedAt());
-        assertEquals(expectedDto.isDeleted(), body.isDeleted());
-        assertNull(body.getProducts());
+        assertThat(body).isNotNull();
+        assertThat(body.getId()).isEqualTo(expected.getId().toString());
+        assertThat(body.getTitle()).isEqualTo(expected.getTitle());
+        assertThat(body.getCreatedAt()).isEqualTo(expected.getCreatedAt());
+        assertThat(body.getModifiedAt()).isEqualTo(expected.getModifiedAt());
+        assertThat(body.isDeleted()).isEqualTo(expected.isDeleted());
+        assertThat(body.getProducts()).isNotNull().isEmpty();
     }
 
     @Test

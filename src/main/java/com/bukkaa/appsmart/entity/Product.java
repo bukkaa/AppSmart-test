@@ -23,8 +23,10 @@ public class Product implements Serializable {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne
-    @JoinColumn(name = "customer_id")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "customer_id", updatable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Customer customer;
 
     @Column(name = "title", nullable = false)
@@ -39,7 +41,7 @@ public class Product implements Serializable {
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Timestamp createdAt;
 
     @Column(name = "modified_at")
