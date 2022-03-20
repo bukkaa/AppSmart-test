@@ -1,7 +1,7 @@
 # AppSmart-test
 
 Test application providing Customers and Products Endpoints.
-`GET` and `POST` methods are allowed for anyone, and `PUT` and `DELETE` - only for authenticated users.
+`GET` and `POST` methods are allowed for anyone, and `PUT` and `DELETE` - for authenticated users only.
 
 ### Security
 
