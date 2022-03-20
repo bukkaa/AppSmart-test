@@ -24,3 +24,4 @@ DB connection URL and credentials could be setup in the _application.yml_.
 
 Application also uses Maven, Java 11, Spring Boot 2.6.2, MapStruct 1.4.2.FINAL, 
 and JJWT 0.9.1 and Lombok for more convenient work with tokens and reduction of boilerplate code.
+JUnit, Mockito and in-memory H2 database are used for testing purposes.
