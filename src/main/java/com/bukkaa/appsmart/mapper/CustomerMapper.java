@@ -17,6 +17,7 @@ import static org.mapstruct.NullValueCheckStrategy.ALWAYS;
 public interface CustomerMapper {
 
     @Mapping(target = "id", nullValueCheckStrategy = ALWAYS, qualifiedByName = "uuidToString")
+    @Mapping(target = "isDeleted", source = "deleted")
     CustomerDto toDto(Customer model);
 
     default List<CustomerDto> toDtos(List<Customer> list) {

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,14 +19,15 @@ import java.util.Optional;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/customers/")
+@RequestMapping("/api/v1/customers")
 public class CustomerController {
 
     private final CustomerManager manager;
     private final CustomerMapper mapper;
 
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
+                 produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CustomerDto> createCustomer(@RequestBody(required = false) CustomerDto dto) {
         log.info("createCustomer <<< dto = {}", dto);
         if (dto == null) {
@@ -37,7 +39,8 @@ public class CustomerController {
         return ResponseEntity.ok(mapper.toDto(customer));
     }
 
-    @GetMapping("/{customerId}")
+    @GetMapping(path = "/{customerId}",
+                produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CustomerDto> findCustomer(@PathVariable String customerId) {
         log.info("findCustomer <<< customerId = '{}'", customerId);
 
@@ -47,7 +50,7 @@ public class CustomerController {
         return ResponseEntity.of(customerOpt.map(mapper::toDto));
     }
 
-    @GetMapping
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<CustomerDto>> getAllCustomersPageable(@RequestParam int page,
                                                                      @RequestParam int size) {
         log.info("getAllCustomers <<< ");
@@ -62,7 +65,9 @@ public class CustomerController {
         return ResponseEntity.ok(mapper.toDtos(customersPage.getContent()));
     }
 
-    @PutMapping("/{customerId}")
+    @PutMapping(path = "/{customerId}",
+                consumes = MediaType.APPLICATION_JSON_VALUE,
+                produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CustomerDto> updateCustomer(@PathVariable String customerId,
                                                       @RequestBody(required = false) UpdateCustomerDto updateDto) {
         log.info("updateCustomer <<< customerId = '{}', update = {}", customerId, updateDto);

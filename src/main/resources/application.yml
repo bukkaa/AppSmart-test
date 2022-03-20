@@ -10,3 +10,8 @@ spring:
       ddl-auto: update
     properties:
       hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+appsmart:
+  security:
+    token:
+      secret: theSecretKey
+      expirationMs: 86400000
